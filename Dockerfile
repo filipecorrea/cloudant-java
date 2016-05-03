@@ -1,20 +1,32 @@
-FROM java:8
+FROM websphere-liberty:8.5.5
+# Ubuntu 14.04.4 LTS
+# IBM Java RE 1.8.0
+
+ENV LICENSE accept
+
+# Install and setup paths to Java Open JDK 7
+RUN apt-get update && apt-get install -y openjdk-7-jdk
+ENV JAVA_HOME /usr/lib/jvm/java-7-openjdk-amd64/
+ENV PATH $JAVA_HOME/bin:$PATH
 
 # Install Apache Maven
 RUN apt-get update
 RUN apt-get install -y maven
 
-WORKDIR /code
+# Change work directory to /tmp
+WORKDIR /tmp
 
-# Add pom.xml and resolve project dependencies
-ADD pom.xml /code/pom.xml
-RUN ["mvn", "dependency:resolve"]
-RUN ["mvn", "verify"]
+# Add pom.xml
+ADD pom.xml /tmp/pom.xml
 
-# Adding source, compile and package into a fat jar
-ADD src /code/src
-RUN ["mvn", "package"]
+# Get all the downloads out of the way
+RUN mvn verify clean --fail-never
 
-# Expose port 4567
-EXPOSE 4567
-CMD ["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-jar", "target/cloudant-jar-with-dependencies.jar"]
+# Add source folder
+ADD src /tmp/src
+
+# Compile and package application
+RUN mvn verify
+
+# Copy generated WAR file to server
+RUN cp /tmp/target/Sample.war /opt/ibm/wlp/usr/servers/defaultServer/dropins/
