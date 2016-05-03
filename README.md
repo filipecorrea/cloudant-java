@@ -1,12 +1,36 @@
 # Cloudant
 
-Simple Cloudant example build with Docker.
+Cloudant and Java application running in WebSphere build with Docker.
 
 ## Prerequisites
 
 - [Docker]
 
-## Build
+## CouchDB
+
+Those steps must be followed to build and run a CouchDB Docker container.
+
+### Build
+
+Create and build a CouchDB container:
+
+```sh
+docker build -t couchdb .
+```
+
+### Run
+
+Once the image is built, start it with:
+
+```sh
+docker run --name couchdb -p 5984:5984 -d couchdb
+```
+
+## Application
+
+Those steps must be followed to build and run the Java application Docker container.
+
+### Build
 
 At root directory, run:
 
@@ -16,24 +40,42 @@ docker build -t filipecorrea/cloudant-java .
 
 This will take a while for the first time since it downloads and installs Maven and downloads all the project’s dependencies. Every subsequent start of this build will only take a few seconds, as again everything will be already cached.
 
-## Run
+You might need to change Docker IP in src/main/java/com/cloudant/CloudantAPI.java so the application can find the CouchDB database:
+
+```java
+databaseURL = "http://192.168.99.100:5984";
+```
+
+### Run
 
 Once the image is built, start it with:
 
 ```sh
-docker run -d -p 4567:4567 filipecorrea/cloudant-java
+docker run --name cloudant-java -d -p 80:9080 filipecorrea/cloudant-java
 ```
 
-And test it with:
+WebSphere takes about a minute to start. Once it's complete, you can test the application running:
 
 ```sh
-curl http://localhost:4567
+open "http://$(docker-machine ip default)/Sample/SimpleServlet"
 ```
 
-In Mac OS, you should first get the Docker machine IP. Test it with:
+## Optional
+
+[fswatch] is a file change monitor that receives notifications when the contents of specified files or directories are modified.
+
+If you want to keep your Docker container updated everytime you change project's source code, just install it using [Homebrew]:
 
 ```sh
-open "http://$(docker-machine ip default):4567/"
+brew install fswatch
+```
+
+And point it to your project source folder:
+
+```sh
+fswatch -o ~/project-path/src | xargs -n1 ~/project-path/build.sh
 ```
 
 [Docker]: <http://docker.com>
+[fswatch]: <https://github.com/emcrisostomo/fswatch>
+[Homebrew]: <http://brew.sh>
